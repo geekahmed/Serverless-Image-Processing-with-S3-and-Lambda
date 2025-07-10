@@ -6,7 +6,7 @@ resource "aws_vpc" "main" {
   tags = { Name = "image-processing-vpc" }
 }
 
-# Private Subnets (Lambda functions only need private subnets)
+# Private Subnets
 resource "aws_subnet" "private_a" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.1.0/24"
@@ -21,10 +21,42 @@ resource "aws_subnet" "private_b" {
   tags = { Name = "private-b" }
 }
 
-# Route Table for Private Subnets (no internet access needed)
+# Public Subnet for NAT Gateway
+resource "aws_subnet" "public" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.0.0/24"
+  availability_zone       = "${var.aws_region}a"
+  map_public_ip_on_launch = true
+  tags = { Name = "public-a" }
+}
+
+# Internet Gateway
+resource "aws_internet_gateway" "main" {
+  vpc_id = aws_vpc.main.id
+  tags = { Name = "main-igw" }
+}
+
+# Elastic IP for NAT Gateway
+resource "aws_eip" "nat" {
+  domain = "vpc"
+  tags = { Name = "nat-eip" }
+}
+
+# NAT Gateway
+resource "aws_nat_gateway" "main" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public.id
+  tags = { Name = "main-nat-gw" }
+  depends_on = [aws_internet_gateway.main]
+}
+
+# Private Route Table with NAT Gateway
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
-  # No routes needed - VPC endpoints handle all AWS service access
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.main.id
+  }
   tags = { Name = "private-rt" }
 }
 
@@ -37,6 +69,21 @@ resource "aws_route_table_association" "private_a" {
 resource "aws_route_table_association" "private_b" {
   subnet_id      = aws_subnet.private_b.id
   route_table_id = aws_route_table.private.id
+}
+
+# Public Route Table for public subnet
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.main.id
+  }
+  tags = { Name = "public-rt" }
+}
+
+resource "aws_route_table_association" "public" {
+  subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.public.id
 }
 
 # VPC Endpoints
