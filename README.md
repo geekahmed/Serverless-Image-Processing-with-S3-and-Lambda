@@ -13,6 +13,12 @@ A serverless image processing platform built on AWS that provides secure, scalab
 - **⚡ Serverless Architecture**: Auto-scaling with no server management
 - **💰 Cost Optimized**: Pay-per-use pricing model
 
+## 🎥 Project Walkthrough
+
+[![Project Walkthrough](https://img.youtube.com/vi/werhgoCRbgQ/0.jpg)](https://www.youtube.com/watch?v=werhgoCRbgQ&ab_channel=AhmedMoustafa)
+
+Watch a full walkthrough of this project on YouTube by Ahmed Moustafa.
+
 ## 🏗️ Architecture
 ### AWS Architecture Diagram
 ![AWS Arch Diagram](./diagrams/architecture.png)
